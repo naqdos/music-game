@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MelodyMeld - Music Guesser Party & Solo</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                            700: '#a21caf',
+                            900: '#701a75',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(217, 70, 239, 0.4); }
+            50% { box-shadow: 0 0 35px rgba(217, 70, 239, 0.8); }
+        }
+        .animate-glow { animation: pulseGlow 3s infinite ease-in-out; }
+        @keyframes vinylSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-vinyl { animation: vinylSpin 8s linear infinite; }
+        .paused { animation-play-state: paused; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="returnToHome()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-purple-400 flex items-center justify-center shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid fa-music text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-brand-200 to-brand-400 bg-clip-text text-transparent">MelodyMeld</h1>
+                    <p class="text-xs text-slate-400">Party & Solo Music Guesser</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <div id="roomIndicator" class="hidden items-center space-x-2 bg-brand-600/20 border border-brand-500/30 px-3.5 py-1.5 rounded-full text-xs font-semibold text-brand-300">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Room: <strong id="headerRoomCode" class="text-white tracking-widest">----</strong></span>
+                </div>
+                <div id="soloScoreIndicator" class="hidden items-center space-x-2 bg-emerald-600/20 border border-emerald-500/30 px-3.5 py-1.5 rounded-full text-xs font-semibold text-emerald-300">
+                    <i class="fa-solid fa-fire text-amber-400"></i>
+                    <span>Score: <strong id="headerSoloScore" class="text-white">0</strong></span>
+                </div>
+                <button onclick="openHostingModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-medium transition border border-slate-700 flex items-center space-x-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-brand-400"></i>
+                    <span class="hidden sm:inline">Host Guide</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-6 flex flex-col justify-center items-center">
+        
+        <!-- VIEW 1: HOME & 3-WAY OPTION SELECTION -->
+        <div id="homeView" class="w-full max-w-md bg-slate-900/90 border border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl animate-glow">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-brand-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gradient-to-tr from-brand-600 to-purple-500 rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-brand-600/30 mb-3">
+                    <i class="fa-solid fa-headphones text-2xl text-white"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">Choose Your Game Mode</h2>
+                <p class="text-xs text-slate-400 mt-1">Play instantly solo or battle friends in real-time rooms!</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">Your Nickname</label>
+                    <input type="text" id="nicknameInput" maxlength="15" placeholder="e.g. DJ Sparkle" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div class="space-y-3 pt-1">
+                    <!-- Option 1: Play Solo -->
+                    <button onclick="startSoloGame()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-emerald-600/30 transition transform active:scale-95 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-user text-base"></i>
+                        <span>Play Solo Mode</span>
+                    </button>
+
+                    <!-- Option 2: Create Multiplayer Room -->
+                    <button onclick="createRoom()" class="w-full bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-brand-600/30 transition transform active:scale-95 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-users text-base"></i>
+                        <span>Create Multiplayer Room</span>
+                    </button>
+
+                    <!-- Option 3: Join Room -->
+                    <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Join Friend's Room</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="joinCodeInput" maxlength="4" placeholder="CODE" class="w-28 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-center font-mono font-bold tracking-widest text-white uppercase placeholder-slate-600 focus:outline-none focus:border-brand-500">
+                            <button onclick="joinRoom()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-xl font-bold text-xs transition border border-slate-700 flex items-center justify-center space-x-1.5">
+                                <i class="fa-solid fa-right-to-bracket text-brand-400"></i>
+                                <span>Join Room</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: WAITING ROOM LOBBY -->
+        <div id="waitingRoomView" class="w-full max-w-xl bg-slate-900/90 border border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-2xl relative hidden backdrop-blur-xl">
+            <div class="flex items-center justify-between mb-6 border-b border-slate-800 pb-4">
+                <div>
+                    <span class="text-xs text-brand-400 font-semibold uppercase tracking-wider">Lobby Code</span>
+                    <h3 id="displayRoomCode" class="text-3xl font-extrabold font-mono tracking-widest text-white">----</h3>
+                </div>
+                <div class="text-right">
+                    <button onclick="copyRoomLink()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold transition border border-slate-700 flex items-center space-x-2">
+                        <i class="fa-solid fa-share-nodes text-brand-400"></i>
+                        <span>Share Invite</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Players List -->
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase mb-3 flex items-center justify-between">
+                        <span>Players in Room</span>
+                        <span id="playerCountBadge" class="bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded-full text-xs">0</span>
+                    </h4>
+                    <div id="waitingPlayersList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Host Controls & Playlist -->
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase mb-3">Game Settings</h4>
+                        <div id="hostSettingsBox" class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Playlist / Genre</label>
+                                <select id="playlistSelect" onchange="changeGenre(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                                    <option value="default">Top Hits (2016-2026)</option>
+                                    <option value="pop">Pop Anthems</option>
+                                    <option value="hiphop">Hip Hop & R&B</option>
+                                    <option value="rock">Rock & Alternative</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="guestWaitingMsg" class="text-xs text-slate-400 italic hidden mt-4">
+                            Waiting for the host to select a playlist and start the game...
+                        </div>
+                    </div>
+
+                    <div id="startBtnContainer" class="mt-4">
+                        <button onclick="startHostGame()" class="w-full bg-brand-600 hover:bg-brand-500 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-brand-600/30 transition">
+                            Start Game!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 3: ACTIVE GAME ARENA -->
+        <div id="gameView" class="w-full bg-slate-900/90 border border-slate-800/80 rounded-3xl p-6 md:p-8 shadow-2xl relative hidden backdrop-blur-xl animate-glow">
+            
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-brand-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Top Game Info & Leaderboard Drawer Button -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-2">
+                    <span id="currentPlaylistBadge" class="bg-brand-500/10 text-brand-400 border border-brand-500/30 px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1.5">
+                        <i class="fa-solid fa-fire"></i>
+                        <span id="genreBadgeText">Top Hits (2016-Now)</span>
+                    </span>
+                    <select id="ingameGenreSelect" onchange="changeGenre(this.value)" class="bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1 text-xs text-slate-300 focus:outline-none focus:border-brand-500">
+                        <option value="default">Top Hits</option>
+                        <option value="pop">Pop</option>
+                        <option value="hiphop">Hip Hop</option>
+                        <option value="rock">Rock</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="text-xs bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-slate-300">
+                        Round <strong id="roundVal" class="text-white">1</strong>
+                    </div>
+                    <button onclick="toggleLeaderboardModal()" class="bg-slate-800 hover:bg-slate-700 text-brand-300 px-3.5 py-1.5 rounded-xl text-xs font-bold transition border border-slate-700 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-trophy text-amber-400"></i>
+                        <span id="scoreModalBtnText">Scores</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Visualizer / Vinyl Art Section -->
+            <div class="flex flex-col items-center justify-center my-4">
+                <div class="relative w-36 h-36 md:w-44 md:h-44 rounded-full bg-slate-950 border-4 border-slate-800 shadow-2xl flex items-center justify-center p-3">
+                    <div id="vinylRecord" class="w-full h-full rounded-full bg-gradient-to-tr from-slate-900 via-slate-950 to-slate-900 border border-slate-800 flex items-center justify-center relative animate-vinyl paused">
+                        <div class="absolute inset-4 rounded-full border border-slate-800/60"></div>
+                        <div class="absolute inset-8 rounded-full border border-slate-800/40"></div>
+                        <div class="absolute inset-12 rounded-full border border-slate-800/20"></div>
+                        <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-tr from-brand-600 to-purple-500 flex items-center justify-center shadow-inner relative overflow-hidden">
+                            <img id="albumArtImg" src="" alt="Album Art" class="w-full h-full object-cover opacity-80 hidden" onerror="this.classList.add('hidden')">
+                            <i id="albumArtIcon" class="fa-solid fa-music text-white text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Snippet Timeline Unlocks (0.5s, 1s, 2s, 4s, 8s, 16s) -->
+                <div class="w-full max-w-md mt-6">
+                    <div class="flex justify-between text-xs text-slate-400 mb-2 font-medium">
+                        <span>Snippet Duration</span>
+                        <span id="currentDurationLabel" class="text-brand-400 font-bold">0.5s</span>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1.5 bg-slate-950/80 p-2 rounded-2xl border border-slate-800/80" id="durationSteps">
+                        <div data-step="0" class="h-8 rounded-lg bg-brand-600 text-white font-bold text-xs flex items-center justify-center shadow transition-all">0.5s</div>
+                        <div data-step="1" class="h-8 rounded-lg bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center transition-all">1s</div>
+                        <div data-step="2" class="h-8 rounded-lg bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center transition-all">2s</div>
+                        <div data-step="3" class="h-8 rounded-lg bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center transition-all">4s</div>
+                        <div data-step="4" class="h-8 rounded-lg bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center transition-all">8s</div>
+                        <div data-step="5" class="h-8 rounded-lg bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center transition-all">16s</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Playback Controls -->
+            <div class="flex items-center justify-center space-x-4 my-6">
+                <button id="playBtn" onclick="playCurrentSnippet()" class="bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-brand-600/30 transition transform active:scale-95 flex items-center space-x-3">
+                    <i id="playIcon" class="fa-solid fa-play text-lg"></i>
+                    <span id="playBtnText">Play Snippet (0.5s)</span>
+                </button>
+                <button onclick="skipOrExtend()" title="Incorrect / Extend Snippet" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-3.5 rounded-2xl font-semibold text-sm transition border border-slate-700 flex items-center space-x-2">
+                    <i class="fa-solid fa-forward-step text-brand-400"></i>
+                    <span class="hidden sm:inline">Give Up / Extend (+Sec)</span>
+                </button>
+            </div>
+
+            <!-- Autocomplete Guess Box -->
+            <div class="relative mt-4">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 text-slate-400 text-sm"></i>
+                    <input type="text" id="guessInput" autocomplete="off" placeholder="Type song title or artist to search..." 
+                        oninput="handleSearchInput(this.value)"
+                        onkeydown="handleKeydown(event)"
+                        class="w-full bg-slate-950 border border-slate-800 rounded-2xl py-3.5 pl-11 pr-28 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition">
+                    <div class="absolute right-2 flex items-center space-x-1">
+                        <button onclick="submitGuess()" class="bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">Guess</button>
+                    </div>
+                </div>
+
+                <!-- Autocomplete Dropdown Results -->
+                <div id="autocompleteDropdown" class="absolute left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl max-h-60 overflow-y-auto z-40 hidden divide-y divide-slate-800/60">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Result Feedback Banner -->
+            <div id="feedbackBanner" class="mt-4 hidden p-4 rounded-2xl text-center text-sm font-semibold transition-all"></div>
+
+            <!-- Song Reveal Box -->
+            <div id="revealBox" class="mt-4 hidden bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="revealThumb" class="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        <i class="fa-solid fa-music text-slate-500"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-medium">The song was:</div>
+                        <div id="revealSongTitle" class="font-bold text-white text-sm">Song Title</div>
+                        <div id="revealArtistName" class="text-xs text-brand-400">Artist Name</div>
+                    </div>
+                </div>
+                <button id="nextSongBtn" onclick="requestNextSong()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md">
+                    <span>Next Song</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Leaderboard / Scores Modal -->
+    <div id="leaderboardModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl relative">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-lg text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i>
+                    <span id="modalTitleText">Live Leaderboard</span>
+                </h3>
+                <button onclick="toggleLeaderboardModal()" class="text-slate-400 hover:text-white p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="modalScoreList" class="space-y-2 mb-4 max-h-60 overflow-y-auto">
+                <!-- Populated dynamically -->
+            </div>
+            <button onclick="toggleLeaderboardModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold transition">Close</button>
+        </div>
+    </div>
+
+    <!-- Hosting Instructions Modal -->
+    <div id="hostingModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-lg text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-brand-400"></i>
+                    <span>How to Host for Free on Vercel / Netlify</span>
+                </h3>
+                <button onclick="closeHostingModal()" class="text-slate-400 hover:text-white p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                    <div class="font-bold text-white text-sm mb-1 flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs">1</span>
+                        <span>Save as index.html</span>
+                    </div>
+                    <p class="text-slate-400 pl-8">Copy this entire code file and save it on your computer as <code class="text-brand-400 bg-slate-900 px-1.5 py-0.5 rounded">index.html</code>.</p>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                    <div class="font-bold text-white text-sm mb-1 flex items-center space-x-2">
+                        <span class="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs">2</span>
+                        <span>Deploy to Vercel or Netlify Drop</span>
+                    </div>
+                    <p class="text-slate-400 pl-8">Drag and drop your file onto <a href="https://app.netlify.com/drop" target="_blank" class="text-brand-400 underline">Netlify Drop</a> or Vercel. Your multiplayer music game link will be live instantly for all your friends!</p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeHostingModal()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        <p>MelodyMeld Party & Solo • Powered by Firebase & iTunes API</p>
+    </footer>
+
+    <!-- Firebase SDK & Game Logic Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment globals provided by host environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'melody-meld-party';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
+        const customAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+
+        let app, db, auth, currentUser = null;
+        let currentRoomCode = null;
+        let unsubscribeRoom = null;
+        let isHost = false;
+        let gameMode = 'solo'; // 'solo' or 'multiplayer'
+
+        // Default curated list of popular hits (2016-2026)
+        const defaultHits = [
+            { title: "Blinding Lights", artist: "The Weeknd", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/3c/6d/46/3c6d4679-b7b5-22d7-5645-181cf262f33f/mza_10842770295625050860.plus.aac.p.m4a", artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/91/c5/4b/91c54b39-e414-b153-6147-33a5957d383b/20UMGIM13926.rgb.jpg/100x100bb.jpg" },
+            { title: "As It Was", artist: "Harry Styles", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/6c/42/cf/6c42cf5e-ea78-4389-9839-4d69bc539d4b/mza_15598696803708453480.plus.aac.p.m4a", artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/2b/97/57/2b975769-d971-c0ef-304b-32f2f3d52367/886449993322.jpg/100x100bb.jpg" },
+            { title: "Levitating", artist: "Dua Lipa", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/5a/88/fb/5a88fb07-7e61-a5c0-449e-b148c7757fc2/mza_7424660883654575971.plus.aac.p.m4a", artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/3b/6d/21/3b6d214c-47bc-0cd5-9173-195b058c42ca/20UMGIM75204.rgb.jpg/100x100bb.jpg" },
+            { title: "Watermelon Sugar", artist: "Harry Styles", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/64/09/cc/6409cc92-3c48-2e0e-4361-b4ec37ef1d89/mza_12282215234552431671.plus.aac.p.m4a", artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/1c/f9/96/1cf9964e-b5c0-7987-a2f0-f9aa8aa96263/886448378625.jpg/100x100bb.jpg" },
+            { title: "Bad Guy", artist: "Billie Eilish", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/4b/58/b5/4b58b548-c890-4824-2c50-cf52220d91bb/mza_3116348612984577543.plus.aac.p.m4a", artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/71/39/53/71395349-4177-3e11-e1f2-1d70e4e5e407/19UMGIM03260.rgb.jpg/100x100bb.jpg" },
+            { title: "Flowers", artist: "Miley Cyrus", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/e5/22/a8/e522a8ec-5717-37c2-19e4-c5a45b7f7390/mza_11974796338428811776.plus.aac.p.m4a", artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/7f/29/49/7f29497e-4581-ed0a-9d32-d177bc957106/886449944379.jpg/100x100bb.jpg" },
+            { title: "Anti-Hero", artist: "Taylor Swift", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/d1/2f/bc/d12fbcbc-79bf-13c5-9b5b-ea2f7d3e6460/mza_6436940388435848248.plus.aac.p.m4a", artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/6b/5a/04/6b5a0446-ee76-591e-45fa-4395e54eb8ff/22UMGIM82956.rgb.jpg/100x100bb.jpg" },
+            { title: "Stay", artist: "The Kid LAROI & Justin Bieber", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/58/a3/38/58a33827-0245-bb74-0f1c-7f5255476a20/mza_13493867699131627995.plus.aac.p.m4a", artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/0c/33/c2/0c33c208-4107-1bcf-c2cb-23f2f811462a/21UMGIM52377.rgb.jpg/100x100bb.jpg" }
+        ];
+
+        let currentPlaylist = [...defaultHits];
+        let currentStage = 0;
+        const durations = [0.5, 1, 2, 4, 8, 16];
+        let audioElement = new Audio();
+        let playbackTimer = null;
+        let roundOver = false;
+        let localSongData = null;
+        let soloScore = 0;
+        let soloRound = 1;
+
+        // Initialize Firebase Auth
+        async function initAuth() {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (customAuthToken) {
+                    await signInWithCustomToken(auth, customAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUser = auth.currentUser;
+            } catch (err) {
+                console.warn("Firebase offline or demo mode initialized:", err);
+            }
+        }
+        initAuth();
+
+        // 1. PLAY SOLO MODE
+        window.startSoloGame = async function() {
+            gameMode = 'solo';
+            const nickname = document.getElementById('nicknameInput').value.trim() || "Solo Player";
+            soloScore = 0;
+            soloRound = 1;
+            
+            document.getElementById('soloScoreIndicator').classList.remove('hidden');
+            document.getElementById('soloScoreIndicator').classList.add('flex');
+            document.getElementById('roomIndicator').classList.add('hidden');
+            document.getElementById('headerSoloScore').innerText = soloScore;
+
+            loadNewSoloSong();
+        };
+
+        async function loadNewSoloSong() {
+            const randomSong = currentPlaylist[Math.floor(Math.random() * currentPlaylist.length)];
+            localSongData = randomSong;
+            currentStage = 0;
+            roundOver = false;
+
+            audioElement.src = localSongData.previewUrl;
+            audioElement.load();
+
+            updateDurationUI();
+            document.getElementById('guessInput').value = '';
+            document.getElementById('guessInput').disabled = false;
+            document.getElementById('revealBox').classList.add('hidden');
+            document.getElementById('feedbackBanner').classList.add('hidden');
+            document.getElementById('albumArtImg').classList.add('hidden');
+            document.getElementById('albumArtIcon').classList.remove('hidden');
+            document.getElementById('roundVal').innerText = soloRound;
+
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('waitingRoomView').classList.add('hidden');
+            document.getElementById('gameView').classList.remove('hidden');
+        }
+
+        // 2. CREATE MULTIPLAYER ROOM
+        window.createRoom = async function() {
+            gameMode = 'multiplayer';
+            const nickname = document.getElementById('nicknameInput').value.trim() || "Player " + Math.floor(Math.random()*100);
+            if (!currentUser) await initAuth();
+            const userId = currentUser ? currentUser.uid : 'user_' + Math.random().toString(36).substring(7);
+
+            const roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+            currentRoomCode = roomCode;
+            isHost = true;
+
+            const roomData = {
+                roomCode: roomCode,
+                hostId: userId,
+                status: 'waiting',
+                playlistGenre: 'default',
+                currentSongIndex: 0,
+                currentStage: 0,
+                round: 1,
+                song: defaultHits[0],
+                scores: { [userId]: { name: nickname, score: 0, streak: 0 } },
+                players: [{ uid: userId, name: nickname, isHost: true }]
+            };
+
+            if (db && currentUser) {
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode), roomData);
+                } catch (e) {
+                    console.warn("Firestore write skipped, running local demo:", e);
+                }
+            }
+
+            enterWaitingRoom(roomCode, roomData);
+        };
+
+        // 3. JOIN ROOM
+        window.joinRoom = async function() {
+            gameMode = 'multiplayer';
+            const nickname = document.getElementById('nicknameInput').value.trim() || "Player " + Math.floor(Math.random()*100);
+            const codeInput = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+            if (!codeInput || codeInput.length !== 4) {
+                showModalAlert("Please enter a valid 4-character room code.");
+                return;
+            }
+
+            if (!currentUser) await initAuth();
+            const userId = currentUser ? currentUser.uid : 'user_' + Math.random().toString(36).substring(7);
+            currentRoomCode = codeInput;
+            isHost = false;
+
+            if (db && currentUser) {
+                try {
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', codeInput);
+                    const snap = await getDoc(roomRef);
+                    if (!snap.exists()) {
+                        showModalAlert("Room not found! Check code or create a new room.");
+                        return;
+                    }
+                    const data = snap.data();
+                    let players = data.players || [];
+                    if (!players.some(p => p.uid === userId)) {
+                        players.push({ uid: userId, name: nickname, isHost: false });
+                        let scores = data.scores || {};
+                        scores[userId] = { name: nickname, score: 0, streak: 0 };
+                        await updateDoc(roomRef, { players, scores });
+                    }
+                } catch (e) {
+                    console.warn("Firestore join error, running locally:", e);
+                }
+            }
+
+            listenToRoom(codeInput);
+            showWaitingRoomView(codeInput);
+        };
+
+        function enterWaitingRoom(roomCode, data) {
+            listenToRoom(roomCode);
+            showWaitingRoomView(roomCode);
+        }
+
+        function showWaitingRoomView(roomCode) {
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('waitingRoomView').classList.remove('hidden');
+            document.getElementById('gameView').classList.add('hidden');
+            document.getElementById('displayRoomCode').innerText = roomCode;
+            document.getElementById('headerRoomCode').innerText = roomCode;
+            document.getElementById('roomIndicator').classList.remove('hidden');
+            document.getElementById('roomIndicator').classList.add('flex');
+            document.getElementById('soloScoreIndicator').classList.add('hidden');
+
+            if (!isHost) {
+                document.getElementById('hostSettingsBox').classList.add('hidden');
+                document.getElementById('guestWaitingMsg').classList.remove('hidden');
+                document.getElementById('startBtnContainer').classList.add('hidden');
+            }
+        }
+
+        function listenToRoom(roomCode) {
+            if (!db) return;
+            if (unsubscribeRoom) unsubscribeRoom();
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
+            unsubscribeRoom = onSnapshot(roomRef, (docSnap) => {
+                if (!docSnap.exists()) return;
+                const data = docSnap.data();
+                updateWaitingRoomUI(data);
+
+                if (data.status === 'playing' || data.status === 'round_over') {
+                    showGameView(data);
+                }
+            }, (error) => {
+                console.error("Room sync error:", error);
+            });
+        }
+
+        function updateWaitingRoomUI(data) {
+            const players = data.players || [];
+            document.getElementById('playerCountBadge').innerText = players.length;
+            let html = '';
+            players.forEach(p => {
+                html += `<div class="flex items-center justify-between bg-slate-900 px-3 py-2 rounded-xl text-xs">
+                    <span class="font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-user-circle text-brand-400"></i>
+                        <span>${p.name}</span>
+                    </span>
+                    ${p.isHost ? '<span class="bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded text-[10px]">Host</span>' : ''}
+                </div>`;
+            });
+            document.getElementById('waitingPlayersList').innerHTML = html;
+        }
+
+        window.changeGenre = async function(genre) {
+            let term = "billboard pop hits";
+            if (genre === 'pop') term = "pop music hits";
+            else if (genre === 'hiphop') term = "hip hop rap hits";
+            else if (genre === 'rock') term = "rock alternative hits";
+
+            try {
+                const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&entity=song&limit=25`);
+                const json = await res.json();
+                if (json.results && json.results.length > 0) {
+                    currentPlaylist = json.results.map(item => ({
+                        title: item.trackName,
+                        artist: item.artistName,
+                        previewUrl: item.previewUrl,
+                        artwork: item.artworkUrl100
+                    })).filter(item => item.previewUrl);
+                }
+            } catch (e) {
+                console.error("Error loading custom playlist:", e);
+            }
+
+            if (gameMode === 'solo') {
+                loadNewSoloSong();
+            } else if (isHost && currentRoomCode && db) {
+                const firstSong = currentPlaylist[Math.floor(Math.random() * currentPlaylist.length)];
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode);
+                await updateDoc(roomRef, {
+                    playlistGenre: genre,
+                    song: firstSong,
+                    currentStage: 0
+                });
+            }
+        };
+
+        window.startHostGame = async function() {
+            if (!isHost || !currentRoomCode || !db) return;
+            const firstSong = currentPlaylist[Math.floor(Math.random() * currentPlaylist.length)];
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode);
+            await updateDoc(roomRef, {
+                status: 'playing',
+                song: firstSong,
+                currentStage: 0,
+                round: 1
+            });
+        };
+
+        function showGameView(data) {
+            document.getElementById('homeView').classList.add('hidden');
+            document.getElementById('waitingRoomView').classList.add('hidden');
+            document.getElementById('gameView').classList.remove('hidden');
+
+            if (data.song && (!localSongData || localSongData.title !== data.song.title)) {
+                localSongData = data.song;
+                currentStage = data.currentStage || 0;
+                roundOver = false;
+                audioElement.src = localSongData.previewUrl;
+                audioElement.load();
+                updateDurationUI();
+                document.getElementById('guessInput').value = '';
+                document.getElementById('guessInput').disabled = false;
+                document.getElementById('revealBox').classList.add('hidden');
+                document.getElementById('feedbackBanner').classList.add('hidden');
+                document.getElementById('albumArtImg').classList.add('hidden');
+                document.getElementById('albumArtIcon').classList.remove('hidden');
+            }
+
+            document.getElementById('roundVal').innerText = data.round || 1;
+            renderScoresModal(data.scores || {});
+        }
+
+        window.playCurrentSnippet = function() {
+            if (roundOver || !localSongData) return;
+            audioElement.currentTime = 0;
+            audioElement.play().then(() => {
+                setVinylSpinning(true);
+                const durationMs = durations[currentStage] * 1000;
+                if (playbackTimer) clearTimeout(playbackTimer);
+                playbackTimer = setTimeout(() => {
+                    audioElement.pause();
+                    setVinylSpinning(false);
+                }, durationMs);
+            }).catch(err => console.error("Playback error:", err));
+        };
+
+        function setVinylSpinning(spinning) {
+            const vinyl = document.getElementById('vinylRecord');
+            const playIcon = document.getElementById('playIcon');
+            if (spinning) {
+                vinyl.classList.remove('paused');
+                playIcon.className = "fa-solid fa-pause text-lg";
+            } else {
+                vinyl.classList.add('paused');
+                playIcon.className = "fa-solid fa-play text-lg";
+            }
+        }
+
+        audioElement.onended = () => setVinylSpinning(false);
+
+        window.skipOrExtend = async function() {
+            if (roundOver) return;
+            audioElement.pause();
+            setVinylSpinning(false);
+
+            if (currentStage < durations.length - 1) {
+                currentStage++;
+                updateDurationUI();
+                showFeedback(`Incorrect! Unlocked ${durations[currentStage]}s snippet. Try again!`, "warning");
+                playCurrentSnippet();
+            } else {
+                revealSong(false, "Time's up!");
+            }
+        };
+
+        window.handleSearchInput = function(query) {
+            const dropdown = document.getElementById('autocompleteDropdown');
+            if (!query || query.trim().length === 0 || !localSongData) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const matches = [localSongData, ...defaultHits, ...currentPlaylist].filter(s => 
+                s.title.toLowerCase().includes(query.toLowerCase()) || s.artist.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 5);
+
+            let html = '';
+            matches.forEach(m => {
+                html += `<div onclick="selectAutocomplete('${m.title.replace(/'/g, "\\'")}', '${m.artist.replace(/'/g, "\\'")}')" class="p-3 hover:bg-slate-800 cursor-pointer transition flex items-center justify-between text-xs">
+                    <div>
+                        <div class="font-bold text-white">${m.title}</div>
+                        <div class="text-slate-400">${m.artist}</div>
+                    </div>
+                    <i class="fa-solid fa-arrow-turn-down-left text-slate-500"></i>
+                </div>`;
+            });
+            dropdown.innerHTML = html;
+            dropdown.classList.remove('hidden');
+        };
+
+        window.selectAutocomplete = function(title, artist) {
+            document.getElementById('guessInput').value = `${title} - ${artist}`;
+            document.getElementById('autocompleteDropdown').classList.add('hidden');
+            submitGuess();
+        };
+
+        window.handleKeydown = (e) => { if (e.key === 'Enter') submitGuess(); };
+
+        window.submitGuess = async function() {
+            if (roundOver || !localSongData) return;
+            const input = document.getElementById('guessInput').value.trim().toLowerCase();
+            document.getElementById('autocompleteDropdown').classList.add('hidden');
+            if (!input) return;
+
+            const titleMatch = localSongData.title.toLowerCase();
+            if (input.includes(titleMatch) || titleMatch.includes(input)) {
+                audioElement.pause();
+                setVinylSpinning(false);
+                
+                const pointsEarned = Math.max(10, (6 - currentStage) * 20);
+
+                if (gameMode === 'solo') {
+                    soloScore += pointsEarned;
+                    document.getElementById('headerSoloScore').innerText = soloScore;
+                } else if (db && currentRoomCode && currentUser) {
+                    try {
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode);
+                        const snap = await getDoc(roomRef);
+                        if (snap.exists()) {
+                            let scores = snap.data().scores || {};
+                            let uid = currentUser.uid;
+                            if (scores[uid]) {
+                                scores[uid].score += pointsEarned;
+                                scores[uid].streak++;
+                                await updateDoc(roomRef, { scores });
+                            }
+                        }
+                    } catch (e) { console.error(e); }
+                }
+
+                revealSong(true, "Correct! You nailed it!");
+            } else {
+                skipOrExtend();
+            }
+        };
+
+        function updateDurationUI() {
+            const sec = durations[currentStage];
+            document.getElementById('currentDurationLabel').innerText = sec + 's';
+            document.getElementById('playBtnText').innerText = `Play Snippet (${sec}s)`;
+
+            const steps = document.querySelectorAll('#durationSteps > div');
+            steps.forEach((step, idx) => {
+                if (idx < currentStage) {
+                    step.className = "h-8 rounded-lg bg-emerald-600/80 text-white font-bold text-xs flex items-center justify-center transition-all";
+                } else if (idx === currentStage) {
+                    step.className = "h-8 rounded-lg bg-brand-600 text-white font-bold text-xs flex items-center justify-center shadow transition-all animate-pulse";
+                } else {
+                    step.className = "h-8 rounded-lg bg-slate-800 text-slate-500 font-bold text-xs flex items-center justify-center transition-all";
+                }
+            });
+        }
+
+        function revealSong(isCorrect, message) {
+            roundOver = true;
+            audioElement.pause();
+            setVinylSpinning(false);
+            document.getElementById('guessInput').disabled = true;
+
+            const feedback = document.getElementById('feedbackBanner');
+            feedback.className = isCorrect ? 
+                "mt-4 p-4 rounded-2xl text-center text-sm font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : 
+                "mt-4 p-4 rounded-2xl text-center text-sm font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30";
+            feedback.innerHTML = `<i class="fa-solid fa-${isCorrect ? 'circle-check' : 'circle-xmark'} mr-1.5"></i> ${message}`;
+            feedback.classList.remove('hidden');
+
+            document.getElementById('revealSongTitle').innerText = localSongData.title;
+            document.getElementById('revealArtistName').innerText = localSongData.artist;
+            if (localSongData.artwork) {
+                document.getElementById('albumArtImg').src = localSongData.artwork;
+                document.getElementById('albumArtImg').classList.remove('hidden');
+                document.getElementById('albumArtIcon').classList.add('hidden');
+                document.getElementById('revealThumb').innerHTML = `<img src="${localSongData.artwork}" class="w-full h-full object-cover">`;
+            }
+            document.getElementById('revealBox').classList.remove('hidden');
+        }
+
+        window.requestNextSong = async function() {
+            if (gameMode === 'solo') {
+                soloRound++;
+                loadNewSoloSong();
+            } else {
+                if (!isHost || !currentRoomCode || !db) {
+                    if (!isHost) showModalAlert("Only the host can advance to the next song!");
+                    return;
+                }
+                const nextSong = currentPlaylist[Math.floor(Math.random() * currentPlaylist.length)];
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode);
+                const snap = await getDoc(roomRef);
+                if (snap.exists()) {
+                    const r = (snap.data().round || 1) + 1;
+                    await updateDoc(roomRef, {
+                        song: nextSong,
+                        currentStage: 0,
+                        round: r
+                    });
+                }
+            }
+        };
+
+        function renderScoresModal(scoresObj) {
+            const list = document.getElementById('modalScoreList');
+            if (gameMode === 'solo') {
+                list.innerHTML = `<div class="flex items-center justify-between bg-slate-950 px-3.5 py-2.5 rounded-xl text-xs border border-slate-800">
+                    <span class="font-bold text-white flex items-center space-x-2">
+                        <span class="text-emerald-400 font-mono">#1</span>
+                        <span>Solo Score</span>
+                    </span>
+                    <span class="font-extrabold text-emerald-400">${soloScore} pts</span>
+                </div>`;
+                return;
+            }
+
+            let sorted = Object.values(scoresObj).sort((a,b) => b.score - a.score);
+            let html = '';
+            sorted.forEach((p, idx) => {
+                html += `<div class="flex items-center justify-between bg-slate-950 px-3.5 py-2.5 rounded-xl text-xs border border-slate-800">
+                    <span class="font-bold text-white flex items-center space-x-2">
+                        <span class="text-brand-400 font-mono">#${idx+1}</span>
+                        <span>${p.name}</span>
+                    </span>
+                    <span class="font-extrabold text-brand-400">${p.score} pts</span>
+                </div>`;
+            });
+            list.innerHTML = html;
+        }
+
+        window.toggleLeaderboardModal = function() {
+            const m = document.getElementById('leaderboardModal');
+            m.classList.toggle('hidden');
+        };
+
+        window.copyRoomLink = function() {
+            const url = window.location.href.split('?')[0] + "?room=" + currentRoomCode;
+            document.execCommand ? copyTextLegacy(url) : navigator.clipboard.writeText(url);
+            showModalAlert("Room invite link copied to clipboard!");
+        };
+
+        function copyTextLegacy(text) {
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+        }
+
+        window.openHostingModal = () => document.getElementById('hostingModal').classList.remove('hidden');
+        window.closeHostingModal = () => document.getElementById('hostingModal').classList.add('hidden');
+        window.returnToHome = () => window.location.reload();
+
+        function showFeedback(msg, type) {
+            const feedback = document.getElementById('feedbackBanner');
+            feedback.className = type === 'error' ? 
+                "mt-4 p-4 rounded-2xl text-center text-sm font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30" : 
+                "mt-4 p-4 rounded-2xl text-center text-sm font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30";
+            feedback.innerHTML = msg;
+            feedback.classList.remove('hidden');
+            setTimeout(() => { if (!roundOver) feedback.classList.add('hidden'); }, 3000);
+        }
+
+        function showModalAlert(text) {
+            showFeedback(text, "error");
+        }
+
+        // Auto-join room from URL query if present
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const roomParam = params.get('room');
+            if (roomParam) {
+                document.getElementById('joinCodeInput').value = roomParam;
+            }
+        });
+    </script>
+</body>
+</html>
